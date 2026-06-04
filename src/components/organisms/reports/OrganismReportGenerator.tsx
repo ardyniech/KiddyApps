@@ -48,6 +48,14 @@ export function OrganismReportGenerator({
         handleAutoGenerateAll
     } = useReportGenerator(student, aspects, allScores, savedNarratives, onNarrativesChange);
 
+    // Global loading overlay while any generation is in progress
+    const loadingOverlay = generating && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+            <RefreshCw className="animate-spin text-white" size={48} />
+        </div>
+    );
+
+
     // Calculate count of rated Kartika indicators for live display
     const ratedKartikaCount = kartikaScores ? Object.keys(kartikaScores).filter(k => kartikaScores[k]).length : 0;
     const totalKartikaCount = KARTIKA_5NK_ASPECTS.flatMap(a => a.indicators).length;
@@ -377,7 +385,21 @@ export function OrganismReportGenerator({
                     >
                         <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping flex-shrink-0" />
                         <p className="flex-1 font-semibold leading-relaxed text-slate-100">
-                            <strong className="text-emerald-400">Teks Rapor Berhasil Disalin!</strong> Sandbox peramban membatasi pembuakaan link WhatsApp otomatis. Silakan tempel (paste) manual teks rapor langsung ke WA Orang Tua.
+                            <strong className="text-emerald-400">Teks Rapor Berhasil Disalin!</strong> Sandbox peramban membatasi pembuatan link WhatsApp otomatis. Silakan tempel (paste) manual teks rapor langsung ke WA Orang Tua.
+                        </p>
+                    </motion.div>
+                )}
+                {toastMessage && (
+                    <motion.div
+                        key={toastMessage}
+                        initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        className={`fixed bottom-12 right-6 left-6 md:left-auto md:max-w-md z-50 text-xs p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-800 no-print font-sans ${toastType === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`}
+                    >
+                        <div className="w-2.5 h-2.5 rounded-full bg-white animate-ping flex-shrink-0" />
+                        <p className="flex-1 font-semibold leading-relaxed text-white">
+                            {toastMessage}
                         </p>
                     </motion.div>
                 )}

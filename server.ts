@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
+import { z } from "zod"; // <-- Zod for schema validation
 
 dotenv.config();
 
@@ -17,7 +18,21 @@ async function startServer() {
   // API Route: Narasi Generator using Gemini
   app.post("/api/generate-narrative", async (req, res) => {
     try {
-      const { studentName, aspectName, indicators, scores, tone, customNotes, lengthTarget, autoCorrect } = req.body;
+      const generateNarrativeSchema = z.object({
+  studentName: z.string().min(1),
+  aspectName: z.string().min(1),
+  indicators: z.array(z.object({ id: z.string(), text: z.string() })),
+  scores: z.record(z.string()),
+  tone: z.enum(["appreciative", "formal", "constructive"]).optional(),
+  customNotes: z.string().optional(),
+  lengthTarget: z.enum(["short", "standard"]).optional(),
+  autoCorrect: z.boolean().optional()
+});
+const parseResult = generateNarrativeSchema.safeParse(req.body);
+if (!parseResult.success) {
+  return res.status(400).json({ error: parseResult.error.format() });
+}
+const { studentName, aspectName, indicators, scores, tone, customNotes, lengthTarget, autoCorrect } = parseResult.data;
 
       if (!process.env.GEMINI_API_KEY) {
         return res.status(500).json({ error: "Gemini API Key is not configured." });
@@ -93,7 +108,16 @@ async function startServer() {
   // API Route: Narasi Refiner for instant text polishing or shortening
   app.post("/api/refine-text", async (req, res) => {
     try {
-      const { text, aspectName, action } = req.body;
+      const refineTextSchema = z.object({
+  text: z.string().min(1),
+  aspectName: z.string().optional(),
+  action: z.enum(["polish", "shorten", "constructive"]).optional()
+});
+const refineParse = refineTextSchema.safeParse(req.body);
+if (!refineParse.success) {
+  return res.status(400).json({ error: refineParse.error.format() });
+}
+const { text, aspectName, action } = refineParse.data;
 
       if (!process.env.GEMINI_API_KEY) {
         return res.status(500).json({ error: "Gemini API Key is not configured." });

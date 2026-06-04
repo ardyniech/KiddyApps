@@ -15,6 +15,19 @@ export function useReportGenerator(
 ) {
     const [generating, setGenerating] = useState<string | null>(null);
     const [apiError, setApiError] = useState<string | null>(null);
+    // Toast state for user feedback
+    const [toastMessage, setToastMessage] = useState<string>('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+    // Auto-clear toast after 3 seconds
+    useEffect(() => {
+        if (toastMessage) {
+            const timer = setTimeout(() => {
+                setToastMessage('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toastMessage]);
     const [activeTab, setActiveTab] = useState<'aspects' | 'kokurikulum' | 'kartika'>('aspects');
     const { schoolProfile } = useSchoolProfile();
     const [autoProgress, setAutoProgress] = useState<{ active: boolean; currentAspect: string; percent: number }>({
@@ -119,12 +132,17 @@ export function useReportGenerator(
                     updatedAt: Date.now()
                 } as any
             });
+            setToastMessage('Narasi berhasil dihasilkan');
+            setToastType('success');
         } catch (err: any) {
             console.error("AI Generation failed, falling back to local description:", err);
             if (err.message && (err.message.includes("API Key") || err.message.includes("Quota") || err.message.includes("401"))) {
                 setApiError(err.message);
                 setTimeout(() => setApiError(null), 5000);
             }
+            // Show error toast
+            setToastMessage(err?.message || 'Gagal menghasilkan narasi AI');
+            setToastType('error');
             const localNarrative = generateNativeNarrative(aspectId);
             onNarrativesChange({
                 ...savedNarratives,
@@ -433,6 +451,10 @@ export function useReportGenerator(
         handleRefineKartikaText,
         updateKartikaComment,
         autoProgress,
-        handleAutoGenerateAll
+        handleAutoGenerateAll,
+        toastMessage,
+        toastType,
+        setToastMessage,
+        setToastType
     };
 }
